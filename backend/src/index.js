@@ -35,9 +35,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// We're not using local uploads anymore, only Cloudinary
-// const uploadsPath = path.join(__dirname, '../uploads');
-// app.use('/uploads', express.static(uploadsPath));
+
 
 // Routes
 app.use('/api/auth', authRoutes);

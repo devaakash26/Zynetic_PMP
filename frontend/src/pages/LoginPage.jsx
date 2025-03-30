@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import axios from 'axios';
 
 const LoginPage = () => {
   const { darkMode } = useTheme();
@@ -11,12 +12,33 @@ const LoginPage = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [apiStatus, setApiStatus] = useState(null);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Check API connectivity on component mount
+  useEffect(() => {
+    const checkApiStatus = async () => {
+      try {
+        setApiStatus('checking');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        await axios.get(`${apiUrl}/health`, { timeout: 10000 });
+        setApiStatus('online');
+      } catch (err) {
+        console.error('API connection error:', err);
+        setApiStatus('offline');
+      }
+    };
+    
+    checkApiStatus();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    
+    // Clear error when user changes input
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -24,11 +46,18 @@ const LoginPage = () => {
     setError('');
     setLoading(true);
 
+    // Basic form validation
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setError('Email and password are required');
+      setLoading(false);
+      return;
+    }
+
     try {
       await login(formData.email, formData.password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -38,6 +67,13 @@ const LoginPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className={`max-w-md mx-auto ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-8 transition-colors duration-200`}>
         <h1 className={`text-2xl font-bold text-center ${darkMode ? 'text-white' : 'text-gray-800'} mb-6 transition-colors duration-200`}>Log In</h1>
+        
+        {apiStatus === 'offline' && (
+          <div className={`${darkMode ? 'bg-amber-900 text-amber-200' : 'bg-amber-50 text-amber-700'} p-3 rounded-md mb-4 transition-colors duration-200`}>
+            <p className="font-medium">Cannot connect to server</p>
+            <p className="text-sm mt-1">The application server appears to be offline or inaccessible. Login may not work until the connection is restored.</p>
+          </div>
+        )}
         
         {error && (
           <div className={`${darkMode ? 'bg-red-900 text-red-200' : 'bg-red-50 text-red-500'} p-3 rounded-md mb-4 transition-colors duration-200`}>
@@ -84,7 +120,7 @@ const LoginPage = () => {
             <button
               type="submit"
               className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:opacity-50 transition-colors duration-200"
-              disabled={loading}
+              disabled={loading || apiStatus === 'offline'}
             >
               {loading ? 'Logging in...' : 'Log In'}
             </button>
@@ -97,6 +133,11 @@ const LoginPage = () => {
             <Link to="/register" className={`${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-600'} transition-colors duration-200`}>
               Sign up
             </Link>
+          </p>
+          
+          {/* Display API information for debugging */}
+          <p className={`mt-4 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            API Status: {apiStatus === 'online' ? '✅ Connected' : apiStatus === 'offline' ? '❌ Disconnected' : '⏳ Checking...'}
           </p>
         </div>
       </div>

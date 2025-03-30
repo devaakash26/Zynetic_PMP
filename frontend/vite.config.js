@@ -5,12 +5,18 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: [
+      '@emotion/react', 
+      '@emotion/styled', 
+      '@mui/material', 
+      '@mui/icons-material',
+      '@mui/x-data-grid'
+    ]
+  },
   resolve: {
     alias: {
-      '@emotion/styled': path.resolve('./node_modules/@emotion/styled'),
-      '@emotion/react': path.resolve('./node_modules/@emotion/react'),
-      '@mui/material': path.resolve('./node_modules/@mui/material'),
-      '@mui/x-data-grid': path.resolve('./node_modules/@mui/x-data-grid'),
+      '@': path.resolve(__dirname, './src')
     }
   },
   build: {

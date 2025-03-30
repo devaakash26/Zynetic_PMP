@@ -27,13 +27,18 @@ connectDB()
 
 // Middleware
 app.use(cors({
-  origin: 'https://zynetic-aakash.vercel.app',
+  origin: ['http://localhost:5173', 'https://zynetic-aakash.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   credentials: false
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Health check endpoint for API status checks
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'API is operational' });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

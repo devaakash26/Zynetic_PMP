@@ -3,6 +3,8 @@ import axios from 'axios';
 // Use the environment variable with a fallback
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+console.log('API URL:', API_URL); // Log the API URL being used
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_URL,
@@ -10,7 +12,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   },
-  withCredentials: false
+  withCredentials: false,
+  timeout: 15000 // 15 seconds timeout to prevent hanging requests
 });
 
 // Add request interceptor to add auth token
@@ -33,6 +36,17 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Handle network errors specifically
+    if (error.message === 'Network Error') {
+      console.error('Network Error - Unable to connect to API server:', API_URL);
+      return Promise.reject(new Error('Unable to connect to server. Please check your internet connection and try again.'));
+    }
+
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout - API server took too long to respond');
+      return Promise.reject(new Error('Server request timed out. Please try again later.'));
+    }
+
     if (error.response && error.response.status === 401) {
       // Handle unauthorized errors
       localStorage.removeItem('token');
@@ -47,7 +61,26 @@ api.interceptors.response.use(
 // Authentication services
 export const authService = {
   register: (userData) => api.post('/auth/register', userData),
-  login: (email, password) => api.post('/auth/login', { email, password }),
+  
+  login: async (email, password) => {
+    try {
+      console.log('Attempting login with:', { email, server: API_URL });
+      return await api.post('/auth/login', { email, password });
+    } catch (error) {
+      console.error('Login error:', error.message, error.response?.data);
+      // Make error messages more user-friendly
+      if (error.message === 'Network Error') {
+        throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Invalid email or password. Please try again.');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Login failed. Please try again later.');
+      }
+    }
+  },
+  
   getUserProfile: () => api.get('/auth/me'),
   updateUserProfile: (userData) => api.put('/auth/profile', userData),
 };

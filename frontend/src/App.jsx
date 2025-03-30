@@ -16,6 +16,7 @@ import DashboardPage from './pages/DashboardPage';
 import AddProductPage from './pages/AddProductPage';
 import EditProductPage from './pages/EditProductPage';
 import NotFoundPage from './pages/NotFoundPage';
+import TestDataGrid from './components/TestDataGrid';
 
 // Footer component that uses the theme
 const Footer = () => {
@@ -43,6 +44,7 @@ const MainContent = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/test-grid" element={<TestDataGrid />} />
 
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>

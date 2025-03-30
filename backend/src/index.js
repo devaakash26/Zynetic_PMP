@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 const connectDB = require('../utils/db');
 
 // Load environment variables
@@ -17,9 +16,7 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB()
-  .then(() => {
-    console.log('MongoDB connection established successfully');
-  })
+  .then(() => console.log('MongoDB connection established'))
   .catch(err => {
     console.error('MongoDB connection error:', err);
     process.exit(1);
@@ -37,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint for API status checks
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'API is operational' });
+  res.status(200).json({ status: 'ok' });
 });
 
 // Routes
@@ -49,16 +46,9 @@ app.get('/', (req, res) => {
   res.status(200).json({ message: 'Zyntic API is running' });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ message: 'Server is running' });
-});
-
 // Start server if running directly (not on Vercel)
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 // Export for Vercel serverless function

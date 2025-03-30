@@ -63,8 +63,6 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       return response.data;
     } catch (err) {
-      console.error('Login error in AuthContext:', err);
-      // Handle different error types
       const errorMessage = err.message || 'Login failed. Please try again.';
       setError(errorMessage);
       throw new Error(errorMessage);

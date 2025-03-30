@@ -16,7 +16,6 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // Check API connectivity on component mount
   useEffect(() => {
     const checkApiStatus = async () => {
       try {
@@ -25,7 +24,6 @@ const LoginPage = () => {
         await axios.get(`${apiUrl}/health`, { timeout: 10000 });
         setApiStatus('online');
       } catch (err) {
-        console.error('API connection error:', err);
         setApiStatus('offline');
       }
     };
@@ -37,7 +35,6 @@ const LoginPage = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Clear error when user changes input
     if (error) setError('');
   };
 
@@ -46,7 +43,6 @@ const LoginPage = () => {
     setError('');
     setLoading(true);
 
-    // Basic form validation
     if (!formData.email.trim() || !formData.password.trim()) {
       setError('Email and password are required');
       setLoading(false);
@@ -135,7 +131,6 @@ const LoginPage = () => {
             </Link>
           </p>
           
-          {/* Display API information for debugging */}
           <p className={`mt-4 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             API Status: {apiStatus === 'online' ? '✅ Connected' : apiStatus === 'offline' ? '❌ Disconnected' : '⏳ Checking...'}
           </p>

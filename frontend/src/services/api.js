@@ -1,11 +1,7 @@
 import axios from 'axios';
 
-// Use the environment variable with a fallback
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-console.log('API URL:', API_URL); // Log the API URL being used
-
-// Create axios instance
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -13,10 +9,9 @@ const api = axios.create({
     'Accept': 'application/json'
   },
   withCredentials: false,
-  timeout: 15000 // 15 seconds timeout to prevent hanging requests
+  timeout: 15000
 });
 
-// Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -30,25 +25,20 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Handle network errors specifically
     if (error.message === 'Network Error') {
-      console.error('Network Error - Unable to connect to API server:', API_URL);
       return Promise.reject(new Error('Unable to connect to server. Please check your internet connection and try again.'));
     }
 
     if (error.code === 'ECONNABORTED') {
-      console.error('Request timeout - API server took too long to respond');
       return Promise.reject(new Error('Server request timed out. Please try again later.'));
     }
 
     if (error.response && error.response.status === 401) {
-      // Handle unauthorized errors
       localStorage.removeItem('token');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
@@ -58,17 +48,13 @@ api.interceptors.response.use(
   }
 );
 
-// Authentication services
 export const authService = {
   register: (userData) => api.post('/auth/register', userData),
   
   login: async (email, password) => {
     try {
-      console.log('Attempting login with:', { email, server: API_URL });
       return await api.post('/auth/login', { email, password });
     } catch (error) {
-      console.error('Login error:', error.message, error.response?.data);
-      // Make error messages more user-friendly
       if (error.message === 'Network Error') {
         throw new Error('Unable to connect to server. Please check your internet connection and try again.');
       } else if (error.response?.status === 401) {
@@ -85,15 +71,16 @@ export const authService = {
   updateUserProfile: (userData) => api.put('/auth/profile', userData),
 };
 
-// Product services
 export const productService = {
   getProducts: (params) => api.get('/products', { params }),
+  
   getProductById: (id) => {
     if (!id) {
       return Promise.reject(new Error('Invalid product ID'));
     }
     return api.get(`/products/${id}`);
   },
+  
   createProduct: (productData) => {
     const formData = new FormData();
     Object.keys(productData).forEach(key => {
@@ -110,6 +97,7 @@ export const productService = {
       },
     });
   },
+  
   updateProduct: (id, productData) => {
     const formData = new FormData();
     Object.keys(productData).forEach(key => {
@@ -126,6 +114,7 @@ export const productService = {
       },
     });
   },
+  
   deleteProduct: (id) => api.delete(`/products/${id}`),
   
   uploadImage: (formData) => {

@@ -3,7 +3,6 @@ const User = require('../../models/User');
 
 const authMiddleware = async (req, res, next) => {
   try {
-    // Check for token in headers
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Authentication required - no token' });
@@ -14,22 +13,18 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: 'Authentication required - invalid token format' });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Token decoded:', decoded);
 
     if (!decoded.id) {
       return res.status(401).json({ message: 'Invalid token - no user ID' });
     }
     
-    // Find user
     const user = await User.findById(decoded.id);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Attach user to request
     req.user = {
       id: user._id,
       email: user.email,
@@ -38,7 +33,6 @@ const authMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Invalid token - ' + error.message });
     } else if (error.name === 'TokenExpiredError') {

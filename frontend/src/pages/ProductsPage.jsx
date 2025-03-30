@@ -45,7 +45,18 @@ const ProductsPage = () => {
         ...filters
       });
       
-      setProducts(response.data.products);
+      // Log the products to debug image URLs
+      console.log('Products fetched in ProductsPage:', response.data.products);
+      
+      // Check each product's imageUrl
+      const productsWithValidImages = response.data.products.map(product => {
+        if (product.imageUrl) {
+          console.log(`ProductsPage - Product ${product._id} has image:`, product.imageUrl);
+        }
+        return product;
+      });
+      
+      setProducts(productsWithValidImages);
       setPagination(response.data.pagination);
     } catch (err) {
       setError('Failed to load products. Please try again.');
@@ -63,13 +74,12 @@ const ProductsPage = () => {
     pagination.limit, 
     filters.sortBy, 
     filters.sortOrder
-    // Don't include other filter parameters here as they're applied via the Apply button
   ]);
   
   // Apply filters
   const handleApplyFilters = (e) => {
     e.preventDefault();
-    setPagination({ ...pagination, page: 1 }); // Reset to first page
+    setPagination({ ...pagination, page: 1 });
     fetchProducts();
   };
   

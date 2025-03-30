@@ -33,20 +33,14 @@ const EditProductPage = () => {
         const response = await productService.getProductById(id);
         
         if (!response.data) {
-          console.error('Response received but no product data found');
           setError('Product could not be found with the provided ID.');
           setFetchLoading(false);
           return;
         }
         
-        console.log('Product data received successfully:', response.data);
-        console.log('Product ID types - URL param:', typeof id, ', returned id:', typeof response.data.id, ', returned _id:', typeof response.data._id);
-        console.log('Product IDs - URL param:', id, ', returned id:', response.data.id, ', returned _id:', response.data._id);
         
         setProduct(response.data);
       } catch (err) {
-        console.error('Error fetching product for edit:', err);
-        console.error('Error details:', err.response?.data || err.message);
         setError('Failed to load product. It may have been removed or does not exist.');
       } finally {
         setFetchLoading(false);
@@ -61,12 +55,10 @@ const EditProductPage = () => {
     setError('');
     
     try {
-      const productId = id || product._id || product.id;
-      console.log('Updating product with ID:', productId);
-      console.log('Update data:', formData);
+      // Ensure we're using the MongoDB _id consistently
+      const productId = product._id;
       
       await productService.updateProduct(productId, formData);
-      console.log('Product updated successfully');
       navigate('/dashboard');
     } catch (err) {
       console.error('Error updating product:', err.response?.data || err.message);

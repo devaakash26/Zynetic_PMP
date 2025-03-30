@@ -5,11 +5,24 @@ const mongoose = require('mongoose');
 // Create a new product
 exports.createProduct = async (req, res) => {
   try {
-    const { name, description, category, price, rating } = req.body;
+    const { name, description, category, price, rating, imageUrl: imageUrlFromBody } = req.body;
     const userId = req.user.id;
 
     // Handle image upload
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    let imageUrl = null;
+    if (req.file) {
+      // Use only the Cloudinary URL directly without any fallbacks
+      imageUrl = req.file.path;
+      console.log('Creating product with Cloudinary image URL from file:', imageUrl);
+    } else if (imageUrlFromBody) {
+      // Use imageUrl from request body if no file was uploaded but URL was provided
+      imageUrl = imageUrlFromBody;
+      console.log('Creating product with Cloudinary image URL from body:', imageUrl);
+    }
+
+    console.log('Creating new product with data:', {
+      name, description, category, price, rating, imageUrl, userId
+    });
 
     const product = await Product.create({
       name,
@@ -21,7 +34,14 @@ exports.createProduct = async (req, res) => {
       userId
     });
 
-    res.status(201).json(product);
+    // Immediately refetch the product to ensure all fields are populated
+    const populatedProduct = await Product.findById(product._id)
+      .populate('userId', 'name email')
+      .exec();
+
+    console.log('Created product with data:', populatedProduct);
+
+    res.status(201).json(populatedProduct);
   } catch (error) {
     console.error('Create product error:', error);
     res.status(500).json({ message: 'Error creating product' });
@@ -101,7 +121,6 @@ exports.getProducts = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get products error:', error);
     res.status(500).json({ message: 'Error retrieving products' });
   }
 };
@@ -110,11 +129,8 @@ exports.getProducts = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('Fetching product with ID:', id);
     
-    // Check if the ID is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.log('Invalid ObjectId format:', id);
       return res.status(400).json({ message: 'Invalid product ID format' });
     }
 
@@ -123,14 +139,11 @@ exports.getProductById = async (req, res) => {
       .exec();
 
     if (!product) {
-      console.log('Product not found with ID:', id);
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    console.log('Product found:', product.name);
     res.status(200).json(product);
   } catch (error) {
-    console.error('Get product by ID error:', error);
     res.status(500).json({ message: 'Error retrieving product' });
   }
 };
@@ -139,7 +152,7 @@ exports.getProductById = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, category, price, rating } = req.body;
+    const { name, description, category, price, rating, imageUrl: imageUrlFromBody } = req.body;
     const userId = req.user.id;
 
     // Check if product exists
@@ -163,10 +176,19 @@ exports.updateProduct = async (req, res) => {
       rating: rating ? parseFloat(rating) : undefined,
     };
 
-    // Add image URL if file was uploaded
+    // Add image URL if file was uploaded or provided in body
     if (req.file) {
-      updateData.imageUrl = `/uploads/${req.file.filename}`;
+      // Use only the Cloudinary URL directly
+      updateData.imageUrl = req.file.path;
+      console.log('Updating product with Cloudinary image URL from file:', updateData.imageUrl);
+    } else if (imageUrlFromBody) {
+      // Use imageUrl from request body if no file was uploaded but URL was provided
+      updateData.imageUrl = imageUrlFromBody;
+      console.log('Updating product with Cloudinary image URL from body:', updateData.imageUrl);
     }
+
+    // Log the complete update data
+    console.log('Update data before applying:', updateData);
 
     // Remove undefined fields
     Object.keys(updateData).forEach(key => 
@@ -178,8 +200,9 @@ exports.updateProduct = async (req, res) => {
       id,
       updateData,
       { new: true, runValidators: true }
-    );
+    ).populate('userId', 'name email').exec();
 
+    console.log('Updated product result:', product);
     res.status(200).json(product);
   } catch (error) {
     console.error('Update product error:', error);
@@ -210,7 +233,6 @@ exports.deleteProduct = async (req, res) => {
 
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
-    console.error('Delete product error:', error);
     res.status(500).json({ message: 'Error deleting product' });
   }
 }; 

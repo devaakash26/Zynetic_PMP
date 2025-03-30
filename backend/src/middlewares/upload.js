@@ -1,15 +1,35 @@
 const multer = require('multer');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const fs = require('fs');
 
-// Ensure uploads directory exists
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Setup Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'zyntic',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    transformation: [{ width: 1000, height: 1000, crop: 'limit' }],
+    format: 'jpg',
+    resource_type: 'image'
+  }
+});
+
+// Fallback local storage for development
 const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure storage
-const storage = multer.diskStorage({
+const localStorageConfig = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
@@ -20,7 +40,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter
+// File filter for both storage options
 const fileFilter = (req, file, cb) => {
   const allowedFileTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
@@ -33,9 +53,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Initialize multer upload
+// Use Cloudinary in production and local storage in development
+const useCloudinary = true; // Always use Cloudinary
+
 const upload = multer({
-  storage,
+  storage: useCloudinary ? storage : localStorageConfig,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });

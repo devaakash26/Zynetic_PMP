@@ -6,7 +6,6 @@ import { useTheme } from '../context/ThemeContext';
 export const MuiThemeProvider2 = ({ children }) => {
   const { darkMode } = useTheme();
   
-  // Create a theme instance based on the dark mode preference
   const theme = useMemo(() => 
     createTheme({
       palette: {

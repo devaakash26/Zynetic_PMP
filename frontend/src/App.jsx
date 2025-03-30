@@ -15,6 +15,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import AddProductPage from './pages/AddProductPage';
 import EditProductPage from './pages/EditProductPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // Footer component that uses the theme
 const Footer = () => {
@@ -54,6 +55,9 @@ const MainContent = () => {
           <Route element={<AdminRoute />}>
             {/* <Route path="/admin" element={<AdminDashboard />} /> */}
           </Route>
+
+          {/* 404 Page - Must be last */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer />

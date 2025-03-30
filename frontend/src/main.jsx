@@ -2,20 +2,19 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
-// Import MUI theme components
 import { ThemeProvider, createTheme } from '@mui/material';
 
 // Create a custom theme
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#3b82f6', // Tailwind blue-500
+      main: '#3b82f6',
     },
     secondary: {
-      main: '#6b7280', // Tailwind gray-500
+      main: '#6b7280',
     },
     error: {
-      main: '#ef4444', // Tailwind red-500
+      main: '#ef4444',
     },
   },
   typography: {

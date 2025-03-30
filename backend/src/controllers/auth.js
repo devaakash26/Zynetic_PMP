@@ -6,35 +6,26 @@ exports.register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
 
-    console.log('Registration attempt:', { email, name }); // Log registration attempt
-
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Create new user
     const user = new User({
       email,
-      password, // Password will be hashed via the pre-save hook
+      password,
       name,
-      role: 'user' // Default role
+      role: 'user'
     });
 
-    // Save user to database
     await user.save();
-    
-    console.log('User created with ID:', user._id);
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRATION }
     );
 
-    // Return user info and token (exclude password)
     res.status(201).json({
       user: {
         id: user._id,
@@ -45,7 +36,6 @@ exports.register = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Register error:', error);
     res.status(500).json({ message: 'Error creating user: ' + error.message });
   }
 };
@@ -53,32 +43,36 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   try {
+    console.log('Login request body:', req.body);
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    
+    console.log('Login attempt for email:', email);
 
-    console.log('Login attempt:', { email }); // Log login attempt
-
-    // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Verify password
+    console.log('User found, checking password');
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
+      console.log('Invalid password for user:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT token
+    console.log('Password valid, generating token');
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRATION }
     );
 
-    console.log('Login successful:', user._id);
-
-    // Return user info and token (exclude password)
+    console.log('Login successful for user:', email);
     res.status(200).json({
       user: {
         id: user._id,
@@ -89,7 +83,7 @@ exports.login = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error details:', error);
     res.status(500).json({ message: 'Error during login: ' + error.message });
   }
 };
@@ -97,7 +91,6 @@ exports.login = async (req, res) => {
 // Get current user
 exports.getCurrentUser = async (req, res) => {
   try {
-    // User ID is attached from auth middleware
     const userId = req.user.id;
     
     const user = await User.findById(userId).select('-password');
@@ -107,7 +100,6 @@ exports.getCurrentUser = async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    console.error('Get current user error:', error);
     res.status(500).json({ message: 'Error retrieving user: ' + error.message });
   }
 }; 

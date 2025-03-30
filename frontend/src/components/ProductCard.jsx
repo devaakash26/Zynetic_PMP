@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
 import { useTheme } from '../context/ThemeContext';
+import { CardMedia } from '@mui/material';
 
 const ProductCard = ({ product }) => {
   const { id, name, description, category, price, rating, imageUrl } = product;
@@ -10,15 +11,15 @@ const ProductCard = ({ product }) => {
     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden transition-colors duration-200`}>
       <div className="h-48 overflow-hidden">
         {imageUrl ? (
-          <img 
-            src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`} 
+          <CardMedia
+            component="img"
+            height="200"
+            src={imageUrl}
             alt={name}
-            className="w-full h-full object-cover"
             onError={(e) => {
-              console.error('Image failed to load:', imageUrl);
-              e.target.onerror = null;
-              e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
+              e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
             }}
+            sx={{ objectFit: 'cover' }}
           />
         ) : (
           <div className={`w-full h-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} flex items-center justify-center transition-colors duration-200`}>
@@ -54,7 +55,6 @@ const ProductCard = ({ product }) => {
           <Link 
             to={`/products/${product.id || product._id}`}
             className={`${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-600'} text-sm transition-colors duration-200`}
-            onClick={() => console.log('Product clicked:', product)}
             data-id={product.id || product._id}
           >
             View Details

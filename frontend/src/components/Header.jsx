@@ -21,14 +21,12 @@ const Header = () => {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const location = useLocation();
 
-  // Close menu when resizing to desktop
   useEffect(() => {
     if (!isMobile) {
       setIsMenuOpen(false);
     }
   }, [isMobile]);
 
-  // Close menu when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMenuOpen && !event.target.closest('nav') && !event.target.closest('button.mobile-menu-button')) {
@@ -45,19 +43,16 @@ const Header = () => {
     };
   }, [isMenuOpen]);
 
-  // Handle menu toggle
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Close menu when navigating
   const handleNavClick = () => {
     if (isMobile) {
       setIsMenuOpen(false);
     }
   };
 
-  // Check if a link is active
   const isActive = (path) => {
     return location.pathname === path;
   };
@@ -74,7 +69,6 @@ const Header = () => {
       }}
     >
       <div className="container mx-auto px-4 py-3 flex justify-between items-center relative">
-        {/* Logo */}
         <Link
           to="/"
           className={`text-2xl font-bold flex items-center transition-all duration-300 ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
@@ -106,7 +100,6 @@ const Header = () => {
         </Link>
 
         <div className="flex items-center gap-3">
-          {/* Theme toggle button for mobile - always visible */}
           <div className="md:hidden">
             <IconButton
               onClick={toggleTheme}
@@ -128,7 +121,6 @@ const Header = () => {
             </IconButton>
           </div>
 
-          {/* Mobile menu button */}
           <button
             className="mobile-menu-button md:hidden focus:outline-none p-2 bg-opacity-20 rounded-md transition-all duration-200 hover:bg-opacity-30"
             onClick={toggleMenu}
@@ -145,7 +137,6 @@ const Header = () => {
           </button>
         </div>
 
-        {/* Navigation for mobile and desktop */}
         <nav
           className={`${isMobile
             ? `absolute top-full left-0 right-0 ${darkMode ? 'bg-gray-900 bg-opacity-95' : 'bg-white bg-opacity-98'} shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-screen py-4 opacity-100 border-t border-opacity-20' : 'max-h-0 py-0 opacity-0 overflow-hidden'} ${darkMode ? 'border-gray-700' : 'border-gray-200'}`
@@ -153,7 +144,6 @@ const Header = () => {
             }`}
         >
           <div className={`flex ${isMobile ? 'flex-col px-6 space-y-4' : 'items-center'}`}>
-            {/* Navigation Links - Desktop & Mobile */}
             <div className={`${isMobile ? 'pt-3 mt-3 border-t border-opacity-10' : 'mr-3'} ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <Tooltip title={darkMode ? "Switch to light mode" : "Switch to dark mode"} arrow>
                 <IconButton
@@ -229,12 +219,8 @@ const Header = () => {
               </Link>
             </div>
 
-
-
-            {/* Authentication Controls */}
             <div className={`${isMobile ? 'border-t border-opacity-10 pt-3 mt-3' : 'pl-1 border-l border-opacity-10'} ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${isMobile ? 'flex flex-col space-y-3' : 'flex items-center'}`}>
               {isAuthenticated ? (
-                /* Logged in user controls */
                 <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center space-x-3'}`}>
                   <Link
                     to="/dashboard"
@@ -323,7 +309,6 @@ const Header = () => {
                   </button>
                 </div>
               ) : (
-                /* Login/Register Controls */
                 <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center space-x-3'}`}>
                   <Link
                     to="/login"

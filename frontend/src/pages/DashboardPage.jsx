@@ -6,7 +6,9 @@ import { productService } from '../services/api';
 // Import MUI components
 import {
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  Button, Snackbar, Alert, CircularProgress, Tooltip, Box, Paper, Typography, IconButton
+  Button, Snackbar, Alert, CircularProgress, Tooltip, Box, Paper, Typography, IconButton,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, InputAdornment,
+  useMediaQuery, Chip, TablePagination, Card, CardContent, CardMedia, Divider
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -18,155 +20,169 @@ const DashboardPage = () => {
   const { user } = useAuth();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
+  const isSmallScreen = useMediaQuery('(max-width:600px)');
+  const isMediumScreen = useMediaQuery('(max-width:900px)');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // Add state for delete dialog
-  const [deleteDialog, setDeleteDialog] = useState({
-    open: false,
-    productId: null,
-    productName: ''
-  });
+  const [deleteProductId, setDeleteProductId] = useState(null);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [sortOption, setSortOption] = useState('createdAt_desc');
+  const [showFilters, setShowFilters] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success'
+    severity: 'info'
   });
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalProducts: 0,
+    totalCategories: 0,
+    avgRating: 0,
+    recentlyAdded: 0
+  });
+  const categories = ['Electronics', 'Clothing', 'Books', 'Home & Kitchen', 'Beauty', 'Sports', 'Toys', 'Others'];
+  const sortOptions = [
+    { value: 'createdAt_desc', label: 'Newest First' },
+    { value: 'createdAt_asc', label: 'Oldest First' },
+    { value: 'price_asc', label: 'Price: Low to High' },
+    { value: 'price_desc', label: 'Price: High to Low' },
+    { value: 'name_asc', label: 'Name: A to Z' },
+    { value: 'name_desc', label: 'Name: Z to A' },
+    { value: 'rating_desc', label: 'Highest Rated' }
+  ];
 
-  // Helper function to safely convert to number
-  const safeNumber = (value, defaultValue = 0) => {
-    if (value === undefined || value === null) return defaultValue;
-    const num = Number(value);
-    return isNaN(num) ? defaultValue : num;
-  };
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const [sortField, sortDirection] = sortOption.split('_');
 
-  // Fetch user's products
-  useEffect(() => {
-    const fetchUserProducts = async () => {
-      try {
-        // Admin can see all products, regular users see only their own
-        const params = user.role !== 'admin' ? { userId: user.id } : {};
-        const response = await productService.getProducts(params);
-        console.log('Products response:', response.data);
+      const params = {
+        page: page + 1,
+        limit: rowsPerPage,
+        sortBy: sortField,
+        sortOrder: sortDirection,
+        search: searchQuery,
+        category: filterCategory
+      };
 
-        // Process each product to ensure numeric values
-        const processedProducts = response.data.products.map(product => {
-          // Log the original values
-          console.log(`Product - id: ${product.id || product._id}, name: ${product.name}, price: ${product.price}, type: ${typeof product.price}, rating: ${product.rating}`);
+      const response = await productService.getProducts(params);
 
-          // Convert price and rating to numbers, defaulting to 0 if invalid
-          let price = 0;
-          let rating = 0;
+      // Map MongoDB _id to id field for DataGrid but preserve all other fields exactly as received
+      const productsWithId = response.data.products.map(product => ({
+        ...product,
+        id: product._id,
+      }));
 
-          try {
-            price = parseFloat(product.price);
-            if (isNaN(price)) price = 0;
-          } catch (e) {
-            console.error('Error parsing price:', e);
-          }
+      setProducts(productsWithId);
+      setTotalCount(response.data.pagination.total);
 
-          try {
-            rating = parseFloat(product.rating);
-            if (isNaN(rating)) rating = 0;
-          } catch (e) {
-            console.error('Error parsing rating:', e);
-          }
+      // Calculate dashboard stats
+      if (response.data.products.length > 0) {
+        const uniqueCategories = [...new Set(response.data.products.map(product => product.category))];
+        const ratings = response.data.products.map(product => product.rating || 0);
+        const avgRating = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
 
-          // Log the processed values
-          console.log(`Processed - price: ${price}, rating: ${rating}`);
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-          // Create a clean, simple object with properly typed values
-          return {
-            id: product.id || product._id,
-            name: product.name || "N/A",
-            description: product.description || "",
-            category: product.category || "Unknown",
-            price: price,
-            rating: rating,
-            imageUrl: product.imageUrl || "",
-            userId: product.userId || "",
-            _id: product._id
-          };
+        const recentlyAdded = response.data.products.filter(product => {
+          return new Date(product.createdAt) >= oneWeekAgo;
+        }).length;
+
+        setDashboardStats({
+          totalProducts: response.data.pagination.total,
+          totalCategories: uniqueCategories.length,
+          avgRating: avgRating.toFixed(1),
+          recentlyAdded
         });
-
-        setProducts(processedProducts);
-      } catch (err) {
-        setError('Failed to load your products. Please try again.');
-        console.error('Error fetching products:', err);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchUserProducts();
-  }, [user]);
-
-  // Open delete confirmation dialog
-  const handleOpenDeleteDialog = (id, name) => {
-    setDeleteDialog({
-      open: true,
-      productId: id,
-      productName: name
-    });
+    } catch (err) {
+      setError('Failed to load products. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Close delete confirmation dialog
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialog({
-      open: false,
-      productId: null,
-      productName: ''
-    });
+  useEffect(() => {
+    fetchProducts();
+  }, [page, rowsPerPage, sortOption, filterCategory, searchQuery]);
+
+  const handleConfirmDelete = (id) => {
+    setDeleteProductId(id);
+    setOpenConfirmDialog(true);
   };
 
-  // Handle snackbar close
+  const handleCloseDialog = () => {
+    setOpenConfirmDialog(false);
+    setDeleteProductId(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteProductId) return;
+
+    setDeleteLoading(true);
+    try {
+      await productService.deleteProduct(deleteProductId);
+      setProducts(products.filter(product => product._id !== deleteProductId));
+      setTotalCount(prev => prev - 1);
+      setDashboardStats(prev => ({
+        ...prev,
+        totalProducts: prev.totalProducts - 1
+      }));
+      setSnackbar({
+        open: true,
+        message: 'Product deleted successfully',
+        severity: 'success'
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete product',
+        severity: 'error'
+      });
+    } finally {
+      setDeleteLoading(false);
+      handleCloseDialog();
+    }
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+    setPage(0);
+  };
+
+  const handleCategoryChange = (event) => {
+    setFilterCategory(event.target.value);
+    setPage(0);
+  };
+
+  const handleSortChange = (event) => {
+    setSortOption(event.target.value);
+    setPage(0);
+  };
+
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Show success message
-  const showSuccessMessage = (message) => {
-    setSnackbar({
-      open: true,
-      message,
-      severity: 'success'
-    });
-  };
-
-  // Show error message
-  const showErrorMessage = (message) => {
-    setSnackbar({
-      open: true,
-      message,
-      severity: 'error'
-    });
-  };
-
-  // Replace the confirmDelete function
-  const confirmDelete = async () => {
-    try {
-      setDeleteLoading(true);
-      await productService.deleteProduct(deleteDialog.productId);
-      // Remove the product from the state
-      setProducts(products.filter(p => (p.id || p._id) !== deleteDialog.productId));
-      // Show success message
-      showSuccessMessage(`${deleteDialog.productName} has been deleted successfully.`);
-      // Close the dialog
-      handleCloseDeleteDialog();
-    } catch (err) {
-      showErrorMessage('Failed to delete product. Please try again.');
-      console.error(err);
-      // Close the dialog
-      handleCloseDeleteDialog();
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  // Replace the old handleDelete function
-  const handleDelete = (id, name) => {
-    handleOpenDeleteDialog(id, name);
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   // Define columns for the DataGrid
@@ -175,46 +191,50 @@ const DashboardPage = () => {
       field: 'image',
       headerName: 'Image',
       width: 120,
-      renderCell: (params) => (
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          width: '100%',
-          height: '100%'
-        }}>
-          {params.row.imageUrl ? (
-            <img
-              src={params.row.imageUrl.startsWith('http') ? params.row.imageUrl : `http://localhost:5000${params.row.imageUrl}`}
-              alt={params.row.name}
-              style={{
+      renderCell: (params) => {
+        const productId = params.row._id;
+        const imageUrl = params.row.imageUrl;
+
+        return (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+            height: '100%'
+          }}>
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={params.row.name}
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  objectFit: 'cover',
+                  borderRadius: '4px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://via.placeholder.com/80?text=No+Image';
+                }}
+              />
+            ) : (
+              <Box sx={{
                 width: '60px',
                 height: '60px',
-                objectFit: 'cover',
-                borderRadius: '4px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-
-              }}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = 'https://via.placeholder.com/80?text=No+Image';
-              }}
-            />
-          ) : (
-            <Box sx={{
-              width: '60px',
-              height: '60px',
-              bgcolor: darkMode ? '#333' : '#f3f4f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '4px'
-            }}>
-              <Typography variant="caption" color="text.secondary">No image</Typography>
-            </Box>
-          )}
-        </Box>
-      ),
+                bgcolor: darkMode ? '#333' : '#f3f4f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px'
+              }}>
+                <Typography variant="caption" color="text.secondary">No image</Typography>
+              </Box>
+            )}
+          </Box>
+        );
+      },
       sortable: false,
       filterable: false,
       align: 'center',
@@ -330,7 +350,7 @@ const DashboardPage = () => {
         >
           <IconButton
             component={Link}
-            to={`/products/${params.row.id}`}
+            to={`/products/${params.row._id}`}
             size="small"
             sx={{
               color: 'primary.main',
@@ -345,7 +365,7 @@ const DashboardPage = () => {
           </IconButton>
           <IconButton
             component={Link}
-            to={`/product/edit/${params.row.id}`}
+            to={`/product/edit/${params.row._id}`}
             size="small"
             sx={{
               color: 'info.main',
@@ -359,7 +379,7 @@ const DashboardPage = () => {
             <EditIcon fontSize="small" />
           </IconButton>
           <IconButton
-            onClick={() => handleDelete(params.row.id, params.row.name)}
+            onClick={() => handleConfirmDelete(params.row._id)}
             size="small"
             sx={{
               color: 'error.main',
@@ -499,106 +519,85 @@ const DashboardPage = () => {
                     '& .MuiDataGrid-row:hover': { backgroundColor: darkMode ? '#333' : '#f9fafb' },
                     '& .MuiDataGrid-row:not(:last-child)': {
                       borderBottom: `1px solid ${darkMode ? '#333' : '#f3f4f6'}`
-                    },
-                    '& .MuiDataGrid-footerContainer': {
-                      borderTop: `1px solid ${darkMode ? '#333' : '#e5e7eb'}`,
-                      backgroundColor: darkMode ? '#1e1e1e' : '#f9fafb'
                     }
                   }}
                 />
               </Box>
             </Paper>
           ) : (
-            <Paper
-              elevation={0}
-              sx={{
-                textAlign: 'center',
-                py: 8,
-                px: 4,
-                borderRadius: 2,
-                border: `1px solid ${darkMode ? '#333' : '#e5e7eb'}`,
-                bgcolor: darkMode ? 'background.paper' : undefined,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-              }}
-            >
-              <Box
-                sx={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: '50%',
-                  bgcolor: darkMode ? 'primary.dark' : 'primary.lighter',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3
-                }}
-              >
-                <AddIcon sx={{ fontSize: 40, color: darkMode ? 'primary.light' : 'primary.main' }} />
-              </Box>
-              <Typography variant="h5" sx={{ mb: 1, fontWeight: 'bold', color: darkMode ? '#f3f4f6' : '#1e293b' }}>
-                No Products Yet
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 450, mx: 'auto' }}>
-                It looks like you haven't added any products yet. Add your first product to start managing your inventory.
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: 400,
+              border: `1px dashed ${darkMode ? '#333' : '#e5e7eb'}`,
+              borderRadius: 2,
+              bgcolor: darkMode ? 'background.paper' : undefined,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+            }}>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                No products found
               </Typography>
               <Button
                 variant="contained"
+                color="primary"
                 startIcon={<AddIcon />}
                 component={Link}
-                to="/product/add"
+                to="/dashboard/add-product"
                 sx={{
                   px: 3,
                   py: 1,
-                  borderRadius: 1,
+                  borderRadius: 2,
                   textTransform: 'none',
-                  boxShadow: 'none',
-                  '&:hover': { boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+                  fontWeight: 'medium'
                 }}
               >
-                Add Your First Product
+                Add Product
               </Button>
-            </Paper>
+            </Box>
           )}
         </>
       )}
 
-      {/* Delete confirmation dialog */}
-      <Dialog
-        open={deleteDialog.open}
-        onClose={handleCloseDeleteDialog}
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            p: 1
-          }
-        }}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <DialogTitle sx={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-          Confirm Deletion
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <Dialog
+        open={openConfirmDialog}
+        onClose={handleCloseDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Confirm Delete"}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete <Box component="span" sx={{ fontWeight: 'bold' }}>"{deleteDialog.productName}"</Box>? This action cannot be undone.
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this product?
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={handleCloseDeleteDialog}
-            disabled={deleteLoading}
-            variant="outlined"
-            sx={{
-              borderRadius: 1,
-              textTransform: 'none',
-              minWidth: '80px',
-              color: darkMode ? 'text.primary' : 'gray.700',
-              borderColor: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
-            }}
-          >
-            <span className='text-gray-700'>Cancel</span>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary"  variant="outlined" sx={{
+            borderRadius: 1,
+            textTransform: 'none',
+            minWidth: '80px',
+            
+            color: darkMode ? 'text.primary' : 'gray.700',
+            borderColor: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+          }}>
+            <span className={darkMode ? 'text-white border' : 'text-black '}> Cancel</span>
           </Button>
           <Button
-            onClick={confirmDelete}
+            onClick={handleDelete}
             color="error"
             disabled={deleteLoading}
             autoFocus
@@ -614,26 +613,53 @@ const DashboardPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* <Dialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
 
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={5000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          variant="filled"
-          sx={{ width: '100%', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        <DialogTitle sx={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+          Confirm Deletion
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete <Box component="span" sx={{ fontWeight: 'bold' }}>"{product.name}"</Box>? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setShowDeleteConfirm(false)}
+            disabled={deleteLoading}
+            variant="outlined"
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              minWidth: '80px',
+              color: darkMode ? 'text.primary' : 'gray.700',
+              borderColor: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            disabled={deleteLoading}
+            autoFocus
+            variant="contained"
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              minWidth: '80px',
+              boxShadow: 'none'
+            }}
+          >
+            {deleteLoading ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog> */}
     </Box>
-
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

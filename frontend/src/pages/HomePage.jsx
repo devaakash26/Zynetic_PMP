@@ -47,7 +47,6 @@ const HomePage = () => {
   const { isAuthenticated } = useAuth();
   const { darkMode } = useTheme();
   const isMobile = useMediaQuery('(max-width:600px)');
-  const isTablet = useMediaQuery('(max-width:960px)');
 
   return (
     <Box>

@@ -47,12 +47,9 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        console.log('Fetching product with ID:', id);
         const response = await productService.getProductById(id);
-        console.log('Product data received:', response.data);
         setProduct(response.data);
       } catch (err) {
-        console.error('Error fetching product:', err.response?.data || err.message);
         setError('Failed to load product. It may have been removed or does not exist.');
       } finally {
         setLoading(false);
@@ -81,7 +78,6 @@ const ProductDetailPage = () => {
         message: 'Failed to delete product',
         severity: 'error'
       });
-      console.error(err);
     } finally {
       setDeleteLoading(false);
       setShowDeleteConfirm(false);
@@ -102,15 +98,13 @@ const ProductDetailPage = () => {
   // Determine back button URL
   const getBackUrl = () => {
     try {
-      // Check if we came from dashboard
       const referrer = document.referrer;
       if (referrer && referrer.includes('/dashboard')) {
         return '/dashboard';
       }
     } catch (e) {
-      console.error('Error checking referrer:', e);
+      // Fallback if referrer check fails
     }
-    // Default to products list
     return '/products';
   };
 
@@ -284,13 +278,9 @@ const ProductDetailPage = () => {
                   )}
                   <CardMedia
                     component="img"
-                    image={product.imageUrl ?
-                      (product.imageUrl.startsWith('http') ? product.imageUrl : `http://localhost:5000${product.imageUrl}`) :
-                      'https://via.placeholder.com/800x800?text=No+Image'
-                    }
+                    image={product.imageUrl || 'https://via.placeholder.com/800x800?text=No+Image'}
                     alt={product.name}
                     onError={(e) => {
-                      console.error('Image failed to load:', product.imageUrl);
                       e.target.onerror = null;
                       e.target.src = 'https://via.placeholder.com/800x800?text=No+Image';
                     }}
@@ -613,7 +603,7 @@ const ProductDetailPage = () => {
               borderColor: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
             }}
           >
-            <span className='text-gray-700'>Cancel</span>
+            Cancel
           </Button>
           <Button
             onClick={handleDelete}

@@ -25,7 +25,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      await login(formData);
+      await login(formData.email, formData.password);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);

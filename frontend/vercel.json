@@ -2,12 +2,6 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
-  "github": {
-    "silent": true
-  },
   "headers": [
     {
       "source": "/assets/(.*)",
@@ -18,5 +12,8 @@
         }
       ]
     }
-  ]
+  ],
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite"
 }

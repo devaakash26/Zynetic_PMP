@@ -613,51 +613,7 @@ const DashboardPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* <Dialog
-        open={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-
-      >
-        <DialogTitle sx={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-          Confirm Deletion
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete <Box component="span" sx={{ fontWeight: 'bold' }}>"{product.name}"</Box>? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={() => setShowDeleteConfirm(false)}
-            disabled={deleteLoading}
-            variant="outlined"
-            sx={{
-              borderRadius: 1,
-              textTransform: 'none',
-              minWidth: '80px',
-              color: darkMode ? 'text.primary' : 'gray.700',
-              borderColor: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDelete}
-            color="error"
-            disabled={deleteLoading}
-            autoFocus
-            variant="contained"
-            sx={{
-              borderRadius: 1,
-              textTransform: 'none',
-              minWidth: '80px',
-              boxShadow: 'none'
-            }}
-          >
-            {deleteLoading ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog> */}
+      
     </Box>
   );
 };

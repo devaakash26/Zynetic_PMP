@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { productService } from '../services/api';
 import ProductForm from '../components/ProductForm';
-import { Typography, Container, Paper, Box, Button, Alert } from '@mui/material';
+import { Typography, Container, Box, Button, Alert } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const AddProductPage = () => {

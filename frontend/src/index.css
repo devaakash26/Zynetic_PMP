@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode settings for :root only apply when there is no .dark class 
+   and the system prefers dark color scheme */
+@media (prefers-color-scheme: dark) {
+  :root:not(.dark) {
+    color-scheme: dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
+  }
+}
+
+/* Light mode is the default */
+:root {
+  color-scheme: light;
+  color: #213547;
+  background-color: #ffffff;
+}
+
+/* When the .dark class is applied, these styles take precedence */
+:root.dark {
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+/* Default button styles for light mode */
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent; /* Changed from #1a1a1a */
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+button:hover {
+  border-color: #646cff;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Override default form element styles to work with themes */
+input, select, textarea {
+  background-color: transparent;
+  color: inherit;
+}
+
+/* Ensure input placeholders respect the theme */
+::placeholder {
+  color: inherit;
+  opacity: 0.5;
+}
+
+/* These media queries ensure system preferences as a fallback */
+@media (prefers-color-scheme: dark) {
+  button:not([class*="bg-"]) {
+    color: rgba(255, 255, 255, 0.87);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  button:not([class*="bg-"]) {
+    color: #213547;
+  }
+}

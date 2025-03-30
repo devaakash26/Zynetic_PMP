@@ -27,7 +27,7 @@ connectDB()
 
 // Middleware
 app.use(cors({
-  origin: '*',
+  origin: 'https://zynetic-aakash.vercel.app/',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   credentials: false

@@ -11,15 +11,17 @@ const connectDB = async () => {
     console.log('Connection URL:', process.env.DATABASE_URL.replace(/(mongodb\+srv:\/\/)([^:]+):([^@]+)@/, '$1****:****@'));
 
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000, // Increased timeout for serverless
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
       maxPoolSize: 10,
       minPoolSize: 5,
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      family: 4,
+      autoIndex: true,
+      maxIdleTimeMS: 60000,
+      heartbeatFrequencyMS: 10000
     });
     
     console.log(`MongoDB Connected Successfully: ${conn.connection.host}`);

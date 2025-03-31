@@ -7,33 +7,70 @@ const connectDB = async () => {
       throw new Error('DATABASE_URL environment variable is not defined');
     }
 
-    console.log('Connecting to MongoDB...');
+    console.log('Attempting to connect to MongoDB...');
+    console.log('Connection URL:', process.env.DATABASE_URL.replace(/(mongodb\+srv:\/\/)([^:]+):([^@]+)@/, '$1****:****@'));
+
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      serverSelectionTimeoutMS: 10000, // Increased timeout for serverless
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      maxPoolSize: 10,
+      minPoolSize: 5,
+      retryWrites: true,
+      w: 'majority'
     });
     
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Connected Successfully: ${conn.connection.host}`);
+    console.log('Database Name:', conn.connection.name);
+    console.log('Connection State:', conn.connection.readyState);
     return conn;
   } catch (error) {
-    console.error('MongoDB connection error:', error.message);
-    // Don't exit the process in production, let the application handle the error
+    console.error('MongoDB connection error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      stack: error.stack
+    });
+    
+    // Don't exit the process in production
     if (process.env.NODE_ENV !== 'production') {
       process.exit(1);
     }
-    throw error; // Re-throw the error to be handled by the caller
+    throw error;
   }
 };
 
 // Handle MongoDB connection events
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB connected successfully');
+  console.log('Connection State:', mongoose.connection.readyState);
+});
+
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
+  console.log('Connection State:', mongoose.connection.readyState);
 });
 
 mongoose.connection.on('error', (err) => {
-  console.error('MongoDB error:', err);
+  console.error('MongoDB error:', {
+    message: err.message,
+    code: err.code,
+    name: err.name
+  });
+});
+
+// Handle process termination
+process.on('SIGINT', async () => {
+  try {
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed through app termination');
+    process.exit(0);
+  } catch (err) {
+    console.error('Error during MongoDB connection closure:', err);
+    process.exit(1);
+  }
 });
 
 module.exports = connectDB; 

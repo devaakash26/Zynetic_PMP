@@ -17,13 +17,24 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB with retries
 const connectWithRetry = async (retries = 5, delay = 5000) => {
+  // Check if we're already connected
+  if (mongoose.connection.readyState === 1) {
+    console.log('Already connected to MongoDB');
+    return;
+  }
+
   for (let i = 0; i < retries; i++) {
     try {
+      console.log(`MongoDB connection attempt ${i + 1}/${retries}`);
       await connectDB();
       console.log('MongoDB connection successful');
       return;
     } catch (error) {
-      console.error(`MongoDB connection attempt ${i + 1} failed:`, error.message);
+      console.error(`MongoDB connection attempt ${i + 1} failed:`, {
+        message: error.message,
+        code: error.code,
+        name: error.name
+      });
       if (i < retries - 1) {
         console.log(`Retrying in ${delay/1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -34,12 +45,27 @@ const connectWithRetry = async (retries = 5, delay = 5000) => {
 };
 
 // Initialize database connection
-connectWithRetry().catch(error => {
-  console.error('Fatal: Could not connect to MongoDB:', error.message);
-  if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV === 'production') {
+  // In production, connect on first request
+  app.use(async (req, res, next) => {
+    try {
+      await connectWithRetry();
+      next();
+    } catch (error) {
+      console.error('Database connection error:', error);
+      res.status(500).json({
+        message: 'Database connection error',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+} else {
+  // In development, connect immediately
+  connectWithRetry().catch(error => {
+    console.error('Fatal: Could not connect to MongoDB:', error.message);
     process.exit(1);
-  }
-});
+  });
+}
 
 // Middleware
 app.use(cors({
@@ -58,13 +84,29 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint for API status checks
-app.get('/api/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  res.status(200).json({ 
-    status: 'ok',
-    database: dbStatus,
-    environment: process.env.NODE_ENV
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    const dbDetails = {
+      status: dbStatus,
+      readyState: mongoose.connection.readyState,
+      host: mongoose.connection.host,
+      name: mongoose.connection.name
+    };
+    
+    res.status(200).json({ 
+      status: 'ok',
+      database: dbDetails,
+      environment: process.env.NODE_ENV
+    });
+  } catch (error) {
+    console.error('Health check error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Health check failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // Routes

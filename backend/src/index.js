@@ -46,6 +46,20 @@ app.get('/', (req, res) => {
   res.status(200).json({ message: 'Zyntic API is running' });
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
 // Start server if running directly (not on Vercel)
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

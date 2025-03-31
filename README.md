@@ -104,7 +104,7 @@ npm run dev
 The application is configured for deployment on Vercel:
 
 - Backend API: https://zyntic-backend.vercel.app/api
-- Frontend: https://zyntic.vercel.app
+- Frontend: https://zynetic-aakash.vercel.app
 
 To deploy your own version:
 

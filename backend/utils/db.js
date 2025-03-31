@@ -1,8 +1,17 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+// Cache the connection
+let cachedConnection = null;
+
 const connectDB = async () => {
   try {
+    // Return cached connection if available
+    if (cachedConnection) {
+      console.log('Using cached MongoDB connection');
+      return cachedConnection;
+    }
+
     if (!process.env.DATABASE_URL) {
       throw new Error('DATABASE_URL environment variable is not defined');
     }
@@ -11,23 +20,26 @@ const connectDB = async () => {
     console.log('Connection URL:', process.env.DATABASE_URL.replace(/(mongodb\+srv:\/\/)([^:]+):([^@]+)@/, '$1****:****@'));
 
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
-      // Current recommended options
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
-      maxPoolSize: 10,
-      minPoolSize: 5,
+      // Optimized for serverless
+      serverSelectionTimeoutMS: 5000, // Reduced from 10000
+      socketTimeoutMS: 30000, // Reduced from 45000
+      connectTimeoutMS: 5000, // Reduced from 10000
+      maxPoolSize: 5, // Reduced from 10
+      minPoolSize: 1, // Reduced from 5
       retryWrites: true,
       w: 'majority',
       family: 4,
-      autoIndex: true,
-      maxIdleTimeMS: 60000,
-      heartbeatFrequencyMS: 10000
+      autoIndex: false, // Disable auto-indexing in production
+      maxIdleTimeMS: 30000, // Reduced from 60000
+      heartbeatFrequencyMS: 5000 // Reduced from 10000
     });
     
     console.log(`MongoDB Connected Successfully: ${conn.connection.host}`);
     console.log('Database Name:', conn.connection.name);
     console.log('Connection State:', conn.connection.readyState);
+
+    // Cache the connection
+    cachedConnection = conn;
     return conn;
   } catch (error) {
     console.error('MongoDB connection error details:', {
@@ -54,6 +66,8 @@ mongoose.connection.on('connected', () => {
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
   console.log('Connection State:', mongoose.connection.readyState);
+  // Clear cached connection on disconnect
+  cachedConnection = null;
 });
 
 mongoose.connection.on('error', (err) => {
@@ -62,6 +76,8 @@ mongoose.connection.on('error', (err) => {
     code: err.code,
     name: err.name
   });
+  // Clear cached connection on error
+  cachedConnection = null;
 });
 
 // Handle process termination

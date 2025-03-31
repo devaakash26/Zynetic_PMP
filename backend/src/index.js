@@ -16,7 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB with retries
-const connectWithRetry = async (retries = 5, delay = 5000) => {
+const connectWithRetry = async (retries = 3, delay = 3000) => {
   // Check if we're already connected
   if (mongoose.connection.readyState === 1) {
     console.log('Already connected to MongoDB');
@@ -46,10 +46,15 @@ const connectWithRetry = async (retries = 5, delay = 5000) => {
 
 // Initialize database connection
 if (process.env.NODE_ENV === 'production') {
-  // In production, connect on first request
+  // In production, connect on first request with timeout
   app.use(async (req, res, next) => {
     try {
-      await connectWithRetry();
+      // Set a timeout for the database connection
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database connection timeout')), 5000);
+      });
+
+      await Promise.race([connectWithRetry(), timeoutPromise]);
       next();
     } catch (error) {
       console.error('Database connection error:', error);
@@ -113,9 +118,20 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.status(200).json({ message: 'Zyntic API is running' });
+// Root route with timeout
+app.get('/', async (req, res) => {
+  try {
+    // Set a timeout for the response
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 5000);
+    });
+
+    await Promise.race([connectWithRetry(), timeoutPromise]);
+    res.status(200).json({ message: 'Zyntic API is running' });
+  } catch (error) {
+    console.error('Root route error:', error);
+    res.status(500).json({ message: 'API is running but database connection failed' });
+  }
 });
 
 // Error handling middleware

@@ -11,6 +11,7 @@ const connectDB = async () => {
     console.log('Connection URL:', process.env.DATABASE_URL.replace(/(mongodb\+srv:\/\/)([^:]+):([^@]+)@/, '$1****:****@'));
 
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
+      // Current recommended options
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,

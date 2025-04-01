@@ -25,20 +25,11 @@ const connectWithRetry = async (retries = 3, delay = 3000) => {
 
   for (let i = 0; i < retries; i++) {
     try {
-      console.log(`MongoDB connection attempt ${i + 1}/${retries}`);
       await connectDB();
       console.log('MongoDB connection successful');
       return;
     } catch (error) {
-      console.error(`MongoDB connection attempt ${i + 1} failed:`, {
-        message: error.message,
-        code: error.code,
-        name: error.name
-      });
-      if (i < retries - 1) {
-        console.log(`Retrying in ${delay/1000} seconds...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+      console.log("Error While databse connection")
     }
   }
   throw new Error('Failed to connect to MongoDB after multiple attempts');
@@ -46,10 +37,8 @@ const connectWithRetry = async (retries = 3, delay = 3000) => {
 
 // Initialize database connection
 if (process.env.NODE_ENV === 'production') {
-  // In production, connect on first request with timeout
   app.use(async (req, res, next) => {
     try {
-      // Set a timeout for the database connection
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Database connection timeout')), 5000);
       });
@@ -65,7 +54,6 @@ if (process.env.NODE_ENV === 'production') {
     }
   });
 } else {
-  // In development, connect immediately
   connectWithRetry().catch(error => {
     console.error('Fatal: Could not connect to MongoDB:', error.message);
     process.exit(1);

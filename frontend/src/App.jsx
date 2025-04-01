@@ -24,7 +24,7 @@ const Footer = () => {
   
   return (
     <footer className={`${darkMode ? 'bg-gray-900' : 'bg-gray-800'} text-white text-center py-4 transition-colors duration-200`}>
-      <p>&copy; {new Date().getFullYear()} Zyntic. All rights reserved.</p>
+      <p>Made by ❤️ by Aakash</p>
     </footer>
   );
 };

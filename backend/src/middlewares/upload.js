@@ -2,7 +2,6 @@ const multer = require('multer');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const fs = require('fs');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -36,24 +35,8 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Use Cloudinary in production and local storage in development
-const isProduction = process.env.NODE_ENV === 'production';
-
 const upload = multer({
-  storage: isProduction ? storage : multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = path.join(__dirname, '../../uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = path.extname(file.originalname);
-      cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-    },
-  }),
+  storage: storage, // Always use Cloudinary
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });

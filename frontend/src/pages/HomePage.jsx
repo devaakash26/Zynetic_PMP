@@ -133,7 +133,7 @@ const HomePage = () => {
                     size="large"
                     sx={{
                       bgcolor: '#fff',
-                      color: darkMode? "oklch(0.52 0.105 223.128)" : "primary.main",
+                      color: darkMode ? "oklch(0.52 0.105 223.128)" : "primary.main",
                       fontWeight: 600,
                       px: 4,
                       py: 1.5,
@@ -185,7 +185,7 @@ const HomePage = () => {
                   flexWrap: 'wrap',
                   justifyContent: { xs: 'center', md: 'flex-start' }
                 }}>
-                  {['Easy Setup',  'Free Trial'].map((feature, index) => (
+                  {['Easy Setup', 'Free Trial'].map((feature, index) => (
                     <Box
                       key={index}
                       sx={{
@@ -336,7 +336,7 @@ const HomePage = () => {
         </Container>
       </Box>
 
-     
+
 
       {/* CTA Section */}
       <Box
@@ -413,7 +413,7 @@ const HomePage = () => {
                   }
                 }}
               >
-                {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
+                <span className={darkMode?"text-white " :"text-white"}> {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}</span>
               </Button>
 
               <Button

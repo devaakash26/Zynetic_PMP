@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 const connectDB = require('../utils/db');
 const mongoose = require('mongoose');
 
-// Load environment variables
 dotenv.config();
 
 // Import routes
@@ -26,7 +25,6 @@ const connectWithRetry = async (retries = 3, delay = 3000) => {
   for (let i = 0; i < retries; i++) {
     try {
       await connectDB();
-      console.log('MongoDB connection successful');
       return;
     } catch (error) {
       console.log("Error While databse connection")
@@ -71,10 +69,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-  next();
-});
+
 
 // Health check endpoint for API status checks
 app.get('/api/health', async (req, res) => {

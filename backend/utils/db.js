@@ -6,18 +6,9 @@ let cachedConnection = null;
 
 const connectDB = async () => {
   try {
-    // Return cached connection if available
-    if (cachedConnection) {
-      console.log('Using cached MongoDB connection');
-      return cachedConnection;
-    }
-
     if (!process.env.DATABASE_URL) {
       throw new Error('DATABASE_URL environment variable is not defined');
     }
-
-    console.log('Attempting to connect to MongoDB...');
-    console.log('Connection URL:', process.env.DATABASE_URL.replace(/(mongodb\+srv:\/\/)([^:]+):([^@]+)@/, '$1****:****@'));
 
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
       // Optimized for serverless
@@ -34,9 +25,7 @@ const connectDB = async () => {
       heartbeatFrequencyMS: 5000 // Reduced from 10000
     });
     
-    console.log(`MongoDB Connected Successfully: ${conn.connection.host}`);
-    console.log('Database Name:', conn.connection.name);
-    console.log('Connection State:', conn.connection.readyState);
+    console.log(`MongoDB Connected Successfully`);
 
     // Cache the connection
     cachedConnection = conn;
@@ -57,39 +46,5 @@ const connectDB = async () => {
   }
 };
 
-// Handle MongoDB connection events
-mongoose.connection.on('connected', () => {
-  console.log('MongoDB connected successfully');
-  console.log('Connection State:', mongoose.connection.readyState);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected');
-  console.log('Connection State:', mongoose.connection.readyState);
-  // Clear cached connection on disconnect
-  cachedConnection = null;
-});
-
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB error:', {
-    message: err.message,
-    code: err.code,
-    name: err.name
-  });
-  // Clear cached connection on error
-  cachedConnection = null;
-});
-
-// Handle process termination
-process.on('SIGINT', async () => {
-  try {
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed through app termination');
-    process.exit(0);
-  } catch (err) {
-    console.error('Error during MongoDB connection closure:', err);
-    process.exit(1);
-  }
-});
 
 module.exports = connectDB; 

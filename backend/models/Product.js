@@ -36,7 +36,7 @@ const productSchema = new mongoose.Schema({
     required: true
   }
 }, {
-  timestamps: true // Adds createdAt and updatedAt
+  timestamps: true 
 });
 
 // Add text index for search

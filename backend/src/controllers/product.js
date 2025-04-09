@@ -11,13 +11,9 @@ exports.createProduct = async (req, res) => {
     // Handle image upload
     let imageUrl = null;
     if (req.file) {
-      // Use only the Cloudinary URL directly without any fallbacks
       imageUrl = req.file.path;
-      console.log('Creating product with Cloudinary image URL from file:', imageUrl);
     } else if (imageUrlFromBody) {
-      // Use imageUrl from request body if no file was uploaded but URL was provided
       imageUrl = imageUrlFromBody;
-      console.log('Creating product with Cloudinary image URL from body:', imageUrl);
     }
 
     console.log('Creating new product with data:', {
@@ -38,8 +34,6 @@ exports.createProduct = async (req, res) => {
     const populatedProduct = await Product.findById(product._id)
       .populate('userId', 'name email')
       .exec();
-
-    console.log('Created product with data:', populatedProduct);
 
     res.status(201).json(populatedProduct);
   } catch (error) {
@@ -178,17 +172,10 @@ exports.updateProduct = async (req, res) => {
 
     // Add image URL if file was uploaded or provided in body
     if (req.file) {
-      // Use only the Cloudinary URL directly
       updateData.imageUrl = req.file.path;
-      console.log('Updating product with Cloudinary image URL from file:', updateData.imageUrl);
     } else if (imageUrlFromBody) {
-      // Use imageUrl from request body if no file was uploaded but URL was provided
       updateData.imageUrl = imageUrlFromBody;
-      console.log('Updating product with Cloudinary image URL from body:', updateData.imageUrl);
     }
-
-    // Log the complete update data
-    console.log('Update data before applying:', updateData);
 
     // Remove undefined fields
     Object.keys(updateData).forEach(key => 
@@ -201,11 +188,8 @@ exports.updateProduct = async (req, res) => {
       updateData,
       { new: true, runValidators: true }
     ).populate('userId', 'name email').exec();
-
-    console.log('Updated product result:', product);
     res.status(200).json(product);
   } catch (error) {
-    console.error('Update product error:', error);
     res.status(500).json({ message: 'Error updating product' });
   }
 };

@@ -43,36 +43,29 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   try {
-    console.log('Login request body:', req.body);
     const { email, password } = req.body;
     
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
-    
-    console.log('Login attempt for email:', email);
-
     const user = await User.findOne({ email });
     if (!user) {
       console.log('User not found:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    console.log('User found, checking password');
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       console.log('Invalid password for user:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    console.log('Password valid, generating token');
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRATION }
     );
 
-    console.log('Login successful for user:', email);
     res.status(200).json({
       user: {
         id: user._id,
